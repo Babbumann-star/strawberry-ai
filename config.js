@@ -1,2 +1,2 @@
-// Backend API URL - same origin on Vercel (/api/chat serverless function)
-window.BACKEND_URL = "/api/chat";
+// Backend API URL - Render hosted backend
+window.BACKEND_URL = "https://strawberry-ai-backend.onrender.com/chat";
