@@ -3,6 +3,7 @@ services:
     name: strawberry-ai-backend
     runtime: node
     plan: free
+    rootDir: backend
     buildCommand: npm install
     startCommand: node server.js
     healthCheckPath: /health
