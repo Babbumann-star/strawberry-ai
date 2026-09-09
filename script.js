@@ -70,7 +70,8 @@ async function sendMessage(customMessage = null) {
             method: "POST",
 
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "x-api-key": window.API_KEY || ""
             },
 
             body: JSON.stringify({
