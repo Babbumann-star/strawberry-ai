@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>DeepSeek AI</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+
+        <div class="logo">
+            <div class="logo-icon">AI</div>
+
+            <div>
+                <h2>DeepSeek AI</h2>
+                <span>V4 Flash</span>
+            </div>
+        </div>
+
+        <button id="newChatBtn" class="new-chat">
+            + New Chat
+        </button>
+
+        <div class="sidebar-middle">
+
+            <p class="sidebar-title">Chats</p>
+
+            <div class="chat-history">
+                <div class="history-item active">
+                    💬 New conversation
+                </div>
+            </div>
+
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="model-info">
+                <span class="status-dot"></span>
+
+                <div>
+                    <p>DeepSeek V4 Flash</p>
+                    <small>AI Assistant</small>
+                </div>
+            </div>
+        </div>
+
+    </aside>
+
+
+    <!-- Main Chat -->
+    <main class="main">
+
+        <!-- Header -->
+        <header class="header">
+
+            <button class="menu-btn" id="menuBtn">
+                ☰
+            </button>
+
+            <div>
+                <h3>DeepSeek V4 Flash</h3>
+
+                <div class="online">
+                    <span></span>
+                    Online
+                </div>
+            </div>
+
+            <button id="clearBtn" class="clear-btn">
+                Clear
+            </button>
+
+        </header>
+
+
+        <!-- Messages -->
+        <section id="chatBox" class="chat-box">
+
+            <div class="welcome" id="welcome">
+
+                <div class="ai-circle">
+                    AI
+                </div>
+
+                <h1>How can I help you?</h1>
+
+                <p>
+                    Chat with DeepSeek V4 Flash. Ask questions,
+                    write code, learn new topics and more.
+                </p>
+
+
+                <div class="suggestions">
+
+                    <button class="suggestion">
+                        💻 Write a Python program
+                    </button>
+
+                    <button class="suggestion">
+                        📚 Explain artificial intelligence
+                    </button>
+
+                    <button class="suggestion">
+                        ✨ Give me project ideas
+                    </button>
+
+                    <button class="suggestion">
+                        🌐 Create a website
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- Input Area -->
+        <div class="input-wrapper">
+
+            <div class="input-container">
+
+                <textarea
+                    id="messageInput"
+                    placeholder="Message DeepSeek..."
+                    rows="1"
+                ></textarea>
+
+                <button id="sendBtn" class="send-btn">
+                    ➤
+                </button>
+
+            </div>
+
+            <p class="disclaimer">
+                AI can make mistakes. Check important information.
+            </p>
+
+        </div>
+
+    </main>
+
+</div>
+
+<script src="config.js"></script>
+
+<script src="script.js"></script>
+
+</body>
+</html>
