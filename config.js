@@ -1,1 +1,1 @@
-window.BACKEND_URL = "/chat";
+window.BACKEND_URL = "https://strawberry-ai.onrender.com/chat";
