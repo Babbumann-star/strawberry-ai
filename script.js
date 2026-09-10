@@ -12,7 +12,7 @@ const sidebar = document.querySelector(".sidebar");
 
 
 // Backend URL
-const API_URL = window.BACKEND_URL || "http://localhost:8000/chat";
+const API_URL = window.BACKEND_URL || "/chat";
 
 
 // Store conversation
@@ -65,6 +65,9 @@ async function sendMessage(customMessage = null) {
 
     try {
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
+
         const response = await fetch(API_URL, {
 
             method: "POST",
@@ -75,9 +78,13 @@ async function sendMessage(customMessage = null) {
 
             body: JSON.stringify({
                 messages: conversation
-            })
+            }),
+
+            signal: controller.signal
 
         });
+
+        clearTimeout(timeoutId);
 
 
         const data = await response.json();

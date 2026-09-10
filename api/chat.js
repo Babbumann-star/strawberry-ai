@@ -5,6 +5,8 @@ const client = new OpenAI({
   baseURL: "https://kiraai.vn/api/v1"
 });
 
+const MODEL = "qwen3.8-flash-free";
+
 const SYSTEM_PROMPT = `
 You are Strawberry AI, a friendly, helpful and intelligent AI assistant.
 
@@ -47,7 +49,7 @@ module.exports = async function handler(req, res) {
     ];
 
     const response = await client.chat.completions.create({
-      model: "kira-auto",
+      model: MODEL,
       messages: apiMessages,
       temperature: 0.7,
       max_tokens: 4096

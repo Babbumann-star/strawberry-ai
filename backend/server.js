@@ -12,7 +12,8 @@ const app = express();
 
 const PORT = process.env.PORT || 8000;
 
-// Kira AI uses an OpenAI-compatible API
+const MODEL = "qwen3.8-flash-free";
+
 const client = new OpenAI({
   apiKey: process.env.KIRA_API_KEY,
   baseURL: "https://kiraai.vn/api/v1"
@@ -56,7 +57,7 @@ app.get("/", (req, res) => {
 app.get("/health", (req, res) => {
   res.json({
     status: "healthy",
-    model: "kira-auto"
+    model: MODEL
   });
 });
 
@@ -120,7 +121,7 @@ Rules:
 
     const response = await client.chat.completions.create({
 
-      model: "kira-auto",
+      model: MODEL,
 
       messages: apiMessages,
 
