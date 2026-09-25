@@ -8,7 +8,7 @@ const app = express();
 
 const PORT = process.env.PORT || 8000;
 
-const MODELS = [
+const KIRA_MODELS = [
   "deepseek-v4-flash-vision-exp",
   "deepseek-v4.1-flash",
   "deepseek-v4-flash",
@@ -16,22 +16,41 @@ const MODELS = [
   "deepseek-v4-flash-0731",
 ];
 
-const API_KEYS = (process.env.KIRA_API_KEYS || process.env.KIRA_API_KEY || "")
+const KIRA_API_KEYS = (process.env.KIRA_API_KEYS || process.env.KIRA_API_KEY || "")
   .split(",")
   .map(k => k.trim())
   .filter(k => k.length > 0);
 
-const BASE_URL = "https://kiraai.vn/api/v1";
+const KIRA_BASE_URL = "https://kiraai.vn/api/v1";
 
-function createClient(apiKey) {
-  return new OpenAI({ apiKey, baseURL: BASE_URL });
+const OPENROUTER_MODELS = [
+  "openrouter/free",
+  "qwen/qwen3.8-27b:free",
+  "nex-agi/nex-n2.5-pro:free",
+  "thinkingmachines/inkling:free",
+  "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "thinkingmachines/inkling-small:free",
+  "poolside/laguna-s-2.1:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "google/gemma-4-31b-it:free",
+  "nvidia/nemotron-3-super-120b-a12b:free",
+];
+
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
+const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+
+function createKiraClient(apiKey) {
+  return new OpenAI({ apiKey, baseURL: KIRA_BASE_URL });
 }
 
-async function callWithFailover(apiMessages, model) {
-  let lastError;
+function createOpenRouterClient(apiKey) {
+  return new OpenAI({ apiKey, baseURL: OPENROUTER_BASE_URL, defaultHeaders: { "HTTP-Referer": "https://strawberry-ai.onrender.com", "X-Title": "Strawberry AI" } });
+}
 
-  for (const apiKey of API_KEYS) {
-    const client = createClient(apiKey);
+async function callKira(apiMessages, model) {
+  let lastError;
+  for (const apiKey of KIRA_API_KEYS) {
+    const client = createKiraClient(apiKey);
     try {
       const response = await client.chat.completions.create({
         model,
@@ -39,25 +58,54 @@ async function callWithFailover(apiMessages, model) {
         temperature: 0.7,
         max_tokens: 4096,
       });
-      return { reply: response.choices[0].message.content || "", usedKey: apiKey.slice(-8), usedModel: model };
+      return { reply: response.choices[0].message.content || "", usedKey: `kira:${apiKey.slice(-8)}`, usedModel: model, provider: "kira" };
     } catch (error) {
       lastError = error;
-      console.warn(`Key ${apiKey.slice(-8)} failed for model ${model}:`, error.message);
+      console.warn(`[Kira] Key ${apiKey.slice(-8)} failed for ${model}:`, error.message);
     }
   }
-
   throw lastError;
+}
+
+async function callOpenRouter(apiMessages, model) {
+  if (!OPENROUTER_API_KEY) throw new Error("OpenRouter key not configured");
+  const client = createOpenRouterClient(OPENROUTER_API_KEY);
+  try {
+    const response = await client.chat.completions.create({
+      model,
+      messages: apiMessages,
+      temperature: 0.7,
+      max_tokens: 4096,
+    });
+    return { reply: response.choices[0].message.content || "", usedKey: `openrouter:${OPENROUTER_API_KEY.slice(-8)}`, usedModel: model, provider: "openrouter" };
+  } catch (error) {
+    console.warn(`[OpenRouter] Failed for ${model}:`, error.message);
+    throw error;
+  }
 }
 
 async function chatWithFailover(apiMessages) {
   let lastError;
 
-  for (const model of MODELS) {
+  for (const model of KIRA_MODELS) {
     try {
-      return await callWithFailover(apiMessages, model);
+      console.log(`[Failover] Trying Kira model: ${model}`);
+      return await callKira(apiMessages, model);
     } catch (error) {
       lastError = error;
-      console.warn(`Model ${model} failed on all keys:`, error.message);
+      console.warn(`[Failover] Kira model ${model} exhausted all keys`);
+    }
+  }
+
+  console.log(`[Failover] All Kira models failed, trying OpenRouter free models...`);
+
+  for (const model of OPENROUTER_MODELS) {
+    try {
+      console.log(`[Failover] Trying OpenRouter model: ${model}`);
+      return await callOpenRouter(apiMessages, model);
+    } catch (error) {
+      lastError = error;
+      console.warn(`[Failover] OpenRouter model ${model} failed`);
     }
   }
 
@@ -82,17 +130,21 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.json({
     status: "online",
-    message: "Strawberry AI Backend running with DeepSeek V4 Flash (multi-key failover)",
-    models: MODELS,
-    keysConfigured: API_KEYS.length,
+    message: "Strawberry AI Backend with Kira + OpenRouter failover",
+    kiraModels: KIRA_MODELS,
+    openrouterModels: OPENROUTER_MODELS,
+    kiraKeys: KIRA_API_KEYS.length,
+    openrouterKey: OPENROUTER_API_KEY ? "configured" : "missing",
   });
 });
 
 app.get("/health", (req, res) => {
   res.json({
     status: "healthy",
-    models: MODELS,
-    keysConfigured: API_KEYS.length,
+    kiraModels: KIRA_MODELS,
+    openrouterModels: OPENROUTER_MODELS,
+    kiraKeys: KIRA_API_KEYS.length,
+    openrouterKey: OPENROUTER_API_KEY ? "configured" : "missing",
   });
 });
 
@@ -130,9 +182,10 @@ Rules:
       reply: result.reply,
       model: result.usedModel,
       key: result.usedKey,
+      provider: result.provider,
     });
   } catch (error) {
-    console.error("ALL FAILOVERS FAILED:", error);
+    console.error("[ERROR] ALL FAILOVERS FAILED:", error);
     res.status(500).json({
       error: "Failed to get AI response after trying all models and keys",
       details: error.message,
@@ -142,6 +195,8 @@ Rules:
 
 app.listen(PORT, () => {
   console.log(`Strawberry AI backend running at: http://localhost:${PORT}`);
-  console.log(`Models: ${MODELS.join(", ")}`);
-  console.log(`API Keys configured: ${API_KEYS.length}`);
+  console.log(`Kira models: ${KIRA_MODELS.join(", ")}`);
+  console.log(`OpenRouter free models: ${OPENROUTER_MODELS.join(", ")}`);
+  console.log(`Kira keys: ${KIRA_API_KEYS.length}`);
+  console.log(`OpenRouter key: ${OPENROUTER_API_KEY ? "configured" : "missing"}`);
 });
