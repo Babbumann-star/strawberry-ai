@@ -1,11 +1,23 @@
 const OpenAI = require("openai");
 
-const client = new OpenAI({
-  apiKey: process.env.KIRA_API_KEY,
-  baseURL: "https://kiraai.vn/api/v1"
-});
+function createClient() {
+  const apiKey = process.env.OPENROUTER_API_KEY;
 
-const MODEL = "qwen3.8-flash-free";
+  if (!apiKey) {
+    throw new Error("OPENROUTER_API_KEY is not configured");
+  }
+
+  return new OpenAI({
+    apiKey,
+    baseURL: "https://openrouter.ai/api/v1",
+    defaultHeaders: {
+      "HTTP-Referer": process.env.APP_URL || "https://strawberry-ai.onrender.com",
+      "X-Title": "Strawberry AI",
+    }
+  });
+}
+
+const MODEL = "openrouter/free";
 
 const SYSTEM_PROMPT = `
 You are Strawberry AI, a friendly, helpful and intelligent AI assistant.
@@ -39,13 +51,27 @@ module.exports = async function handler(req, res) {
   try {
     const { messages = [] } = req.body || {};
 
-    if (!messages.length) {
+    if (!Array.isArray(messages) || !messages.length) {
       return res.status(400).json({ error: "Messages are required" });
+    }
+
+    const client = createClient();
+
+    const trimmed = messages
+      .filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
+      .slice(-24)
+      .map(m => ({
+        role: m.role,
+        content: m.content.length > 8000 ? m.content.slice(0, 8000) : m.content,
+      }));
+
+    if (!trimmed.length) {
+      return res.status(400).json({ error: "No valid messages found" });
     }
 
     const apiMessages = [
       { role: "system", content: SYSTEM_PROMPT },
-      ...messages
+      ...trimmed
     ];
 
     const response = await client.chat.completions.create({
@@ -55,14 +81,21 @@ module.exports = async function handler(req, res) {
       max_tokens: 4096
     });
 
-    const reply = response.choices[0].message.content || "";
+    const reply = response.choices[0].message.content;
+
+    if (!reply || !reply.trim()) {
+      return res.status(502).json({ error: "Model returned an empty response" });
+    }
 
     return res.json({ reply });
   } catch (error) {
-    console.error("DEEPSEEK ERROR:", error);
+    if (String(error.message).includes("OPENROUTER_API_KEY")) {
+      return res.status(500).json({ error: "Server is not configured" });
+    }
+
+    console.error("OPENROUTER ERROR:", error.message);
     return res.status(500).json({
-      error: "Failed to get AI response",
-      details: error.message
+      error: "Failed to get AI response"
     });
   }
 };
