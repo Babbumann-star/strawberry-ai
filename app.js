@@ -1,4 +1,4 @@
-﻿
+
 const API_URL =
   window.BACKEND_URL ||
   "https://strawberry-ai.onrender.com/chat";
@@ -60,10 +60,10 @@ function toggleTheme() {
     document.body.classList.contains("light");
 
   themeButton.innerHTML =
-    isLight ? "ÃƒÂ¢Ã‹Å“Ã¢â€šÂ¬ÃƒÂ¯Ã‚Â¸Ã‚Â Light mode" : "ÃƒÂ°Ã…Â¸Ã…â€™Ã¢â€žÂ¢ Dark mode";
+    isLight ? "☀️ Light mode" : "🌙 Dark mode";
 
   themeIcon.innerHTML =
-    isLight ? "ÃƒÂ¢Ã‹Å“Ã¢â€šÂ¬ÃƒÂ¯Ã‚Â¸Ã‚Â" : "ÃƒÂ°Ã…Â¸Ã…â€™Ã¢â€žÂ¢";
+    isLight ? "☀️" : "🌙";
 
   localStorage.setItem(
     "novaTheme",
@@ -81,9 +81,9 @@ function loadTheme() {
 
     document.body.classList.add("light");
 
-    themeButton.innerHTML = "ÃƒÂ¢Ã‹Å“Ã¢â€šÂ¬ÃƒÂ¯Ã‚Â¸Ã‚Â Light mode";
+    themeButton.innerHTML = "☀️ Light mode";
 
-    themeIcon.innerHTML = "ÃƒÂ¢Ã‹Å“Ã¢â€šÂ¬ÃƒÂ¯Ã‚Â¸Ã‚Â";
+    themeIcon.innerHTML = "☀️";
 
   }
 
@@ -172,7 +172,7 @@ function addMessage(text, type) {
       : "avatar ai-avatar";
 
   avatar.textContent =
-    type === "user" ? "Y" : "ÃƒÂ¢Ã…â€œÃ‚Â¦";
+    type === "user" ? "Y" : "✦";
 
   const bubble =
     document.createElement("div");
@@ -215,7 +215,7 @@ function showTyping() {
   message.id = "typingMessage";
 
   message.innerHTML =
-    '<div class="avatar ai-avatar">ÃƒÂ¢Ã…â€œÃ‚Â¦</div>' +
+    '<div class="avatar ai-avatar">✦</div>' +
     '<div class="bubble"><div class="typing">' +
     '<span></span><span></span><span></span>' +
     '</div></div>';
@@ -256,7 +256,7 @@ function setGeneratingState(active) {
 
     sendBtn.classList.add("stop-btn");
 
-    sendBtn.textContent = "ÃƒÂ¢Ã¢â‚¬â€œÃ‚Â ";
+    sendBtn.textContent = "■";
 
     sendBtn.title = "Stop generating";
 
@@ -271,7 +271,7 @@ function setGeneratingState(active) {
 
     sendBtn.classList.remove("stop-btn");
 
-    sendBtn.textContent = "ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬Ëœ";
+    sendBtn.textContent = "↑";
 
     sendBtn.title = "Send message";
 

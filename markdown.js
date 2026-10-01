@@ -1,4 +1,4 @@
-﻿/* ================= MARKDOWN ================= */
+/* ================= MARKDOWN ================= */
 
 const ESCAPABLE = /[\\`*_[\]()#+\-.!>~|{}]/;
 
@@ -1047,7 +1047,7 @@ function createCodeBlock(
 
       }
 
-      copyButton.textContent = "Copied ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“";
+      copyButton.textContent = "Copied ✓";
 
       copyButton.classList.add("copied");
 
