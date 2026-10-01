@@ -142,6 +142,18 @@ Rules:
 - Be professional, friendly and concise.
 - If the user asks for code, format it properly using Markdown code blocks.
 - Do not claim to have capabilities you do not have.
+
+Mathematics:
+- Write formulas in LaTeX, never inside code blocks.
+- Inline math uses single dollar signs: $E = mc^2$
+- Display math uses double dollar signs on their own lines:
+$$
+\\int_0^1 x^2\\,dx = \\frac{1}{3}
+$$
+- Use $...$ for short expressions inside a sentence and $$...$$ for anything on its own line.
+- You may also use \\(...\\) and \\[...\\] for inline and display math.
+- Use \\begin{pmatrix} ... \\end{pmatrix} for matrices, \\begin{aligned} ... \\end{aligned} for multi-line derivations, and \\sum, \\prod, \\int, \\lim for sums, products, integrals and limits.
+- Do not wrap LaTeX in triple backticks, and do not add a "latex" code fence.
         `,
       },
       ...trimmed,

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "katex": "^0.18.10",
     "openai": "^7.23.0"
   }
 }

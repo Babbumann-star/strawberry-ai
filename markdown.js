@@ -1,3 +1,337 @@
+/* ================= MATH ================= */
+
+  /*
+    KaTeX is optional. If the script failed to load, math
+    delimiters are stripped and the raw LaTeX is shown as
+    text so nothing is lost.
+  */
+
+  /*
+    KaTeX is loaded with defer, so it is not available
+    while this file parses. Availability must be
+    checked when rendering, not cached at load time.
+  */
+
+  const katexReady = () =>
+    typeof window !== "undefined" &&
+    typeof window.katex !== "undefined" &&
+    typeof window.katex.render === "function";
+
+  const MATH_SYMBOLS =
+    /[\\{}^_&]|\\frac|\\sqrt|\\sum|\\int|\\lim|\\alpha|\\beta|\\gamma|\\infty|\\cdot|\\times|\\pm|\\leq|\\geq|\\neq|\\approx|\\begin|\\end|\\text|\\mathbb|\\mathbf|\\left|\\right/;
+
+  const hasMathContent = (s) => MATH_SYMBOLS.test(s);
+
+  function renderMath(target, tex, displayMode) {
+
+    if (!katexReady()) {
+
+      target.textContent = tex;
+
+      return;
+
+    }
+
+    try {
+
+      window.katex.render(tex, target, {
+        displayMode,
+        throwOnError: false,
+        strict: false,
+        trust: false,
+        output: "html"
+      });
+
+    } catch (error) {
+
+      target.textContent = tex;
+
+    }
+
+  }
+
+  function makeMathNode(tex, displayMode) {
+
+    const span =
+      document.createElement("span");
+
+    span.className = displayMode
+      ? "katex-display-host"
+      : "katex-inline-host";
+
+    renderMath(span, tex, displayMode);
+
+    return span;
+
+  }
+
+  /*
+    Finds the closing delimiter for a math run, skipping
+    escaped characters. Returns -1 when unterminated so
+    the caller can fall back to literal text.
+  */
+
+  function findMathEnd(text, from, closer) {
+
+    for (let i = from; i < text.length; i++) {
+
+      if (text[i] === "\\") {
+        i++;
+        continue;
+      }
+
+      if (
+        text.startsWith(closer, i) &&
+        (closer !== "$" || text[i + 1] !== "$")
+      ) {
+
+        return i;
+
+      }
+
+    }
+
+    return -1;
+
+  }
+
+  /*
+    Display math is handled before the block parser runs so
+    a formula spanning several lines is never split on \n.
+  */
+
+  function splitDisplayMath(text) {
+
+    const parts = [];
+
+    const pattern =
+      /\$\$([\s\S]+?)\$\$\s*|\\\[([\s\S]+?)\\\]\s*/g;
+
+    let last = 0;
+
+    let match;
+
+    while (
+      (match = pattern.exec(text)) !== null
+    ) {
+
+      if (match.index > last) {
+
+        parts.push({
+          type: "text",
+          value: text.slice(last, match.index)
+        });
+
+      }
+
+      parts.push({
+        type: "math",
+        value: (match[1] ?? match[2] ?? "").trim(),
+        display: true
+      });
+
+      last = pattern.lastIndex;
+
+    }
+
+    if (last < text.length) {
+
+      parts.push({
+        type: "text",
+        value: text.slice(last)
+      });
+
+    }
+
+    return parts.length
+      ? parts
+      : [{ type: "text", value: text }];
+
+  }
+
+  /*
+    Inline math. Currency amounts such as "$5" and "costs
+    $10 and $20" are left alone: an inline run only counts
+    when it is closed on the same line and the content looks
+    like LaTeX rather than plain prose.
+  */
+
+  function tokenizeMathInline(text) {
+
+  const out = [];
+
+  let pending = "";
+
+  let index = 0;
+
+  /*
+    Plain segments are tokenized normally so emphasis,
+    links and code spans inside them still work, while
+    each formula becomes one opaque node that the
+    emphasis pass cannot reach into.
+  */
+
+  const emitText = () => {
+
+    if (!pending) return;
+
+    const { out: chunk } = tokenizeInline(pending);
+
+    chunk.forEach((entry) => out.push(entry));
+
+    pending = "";
+
+  };
+
+  const pushMath = (tex) => {
+
+    emitText();
+
+    out.push({ node: makeMathNode(tex, false) });
+
+  };
+
+  const isCurrency = (s) => {
+
+    const v = s.trim();
+
+    if (!v) return true;
+
+    return /^[\d.,]+$/.test(v) || /^\d/.test(v);
+
+  };
+
+  while (index < text.length) {
+
+    const ch = text[index];
+
+    /*
+      Code spans win over math: `code` stays literal
+      even when it contains a dollar sign.
+    */
+
+    if (ch === "`") {
+
+      let run = 0;
+
+      while (text[index + run] === "`") run++;
+
+      const fence = "`".repeat(run);
+
+      const close = text.indexOf(fence, index + run);
+
+      if (close !== -1) {
+
+        pending +=
+          text.slice(index, close + run);
+
+        index = close + run;
+
+        continue;
+
+      }
+
+      pending += fence;
+
+      index += run;
+
+      continue;
+
+    }
+
+    if (ch === "\\" && text[index + 1] === "(") {
+
+      const close = findMathEnd(text, index + 2, "\\)");
+
+      if (close !== -1) {
+
+        pushMath(text.slice(index + 2, close));
+
+        index = close + 2;
+
+        continue;
+
+      }
+
+    }
+
+    if (ch === "$") {
+
+      const lineEnd = text.indexOf("\n", index);
+
+      const limit =
+        lineEnd === -1 ? text.length : lineEnd;
+
+      const close = findMathEnd(text, index + 1, "$");
+
+      if (
+        close !== -1 &&
+        close <= limit &&
+        close > index + 1
+      ) {
+
+        const inner = text.slice(index + 1, close);
+
+        if (!isCurrency(inner)) {
+
+          pushMath(inner);
+
+          index = close + 1;
+
+          continue;
+
+        }
+
+      }
+
+    }
+
+    pending += ch;
+
+    index++;
+
+  }
+
+  emitText();
+
+  return out;
+
+}
+
+  /*
+    Detects undelimited LaTeX on its own, for example a
+    model replying with "\frac{1}{2}" or "\alpha = 5" as
+    the entire message. Only applied to short standalone
+    runs so ordinary prose is never rewritten.
+  */
+
+  function wrapBareLatex(text) {
+
+    const trimmed = text.trim();
+
+    if (trimmed.length > 200) return text;
+
+    if (!trimmed.startsWith("\\")) return text;
+
+    if (
+      /\\begin\{(equation|align|matrix|pmatrix|bmatrix|cases|array)/.test(
+        trimmed
+      )
+    ) {
+
+      return "$\n" + trimmed + "\n$";
+
+    }
+
+    if (!hasMathContent(trimmed)) return text;
+
+    if (trimmed.includes("\n\n")) return text;
+
+    return "$" + trimmed + "$";
+
+  }
+
+
 /* ================= MARKDOWN ================= */
 
 const ESCAPABLE = /[\\`*_[\]()#+\-.!>~|{}]/;
@@ -393,9 +727,16 @@ function resolveEmphasis(entries) {
 
 function appendInline(parent, text) {
 
-  const { out } = tokenizeInline(text);
+  /*
+    Inline math is extracted first so expressions such
+    as $x_1 * y$ keep their asterisks. The math nodes
+    are then treated as opaque atoms, which lets the
+    emphasis pass still run over the rest of the line.
+  */
 
-  resolveEmphasis(out).forEach((entry) => {
+  const entries = tokenizeMathInline(text);
+
+  resolveEmphasis(entries).forEach((entry) => {
 
     parent.appendChild(entry.node);
 
@@ -522,6 +863,33 @@ function sanitizeUrl(url) {
 */
 
 function renderMarkdown(container, text) {
+
+  /*
+    Display math is split out first so a formula
+    spanning several lines reaches KaTeX intact
+    instead of being broken up by the block parser.
+  */
+
+  splitDisplayMath(text).forEach((part) => {
+
+    if (part.type === "math") {
+
+      container.appendChild(
+        makeMathNode(part.value, true)
+      );
+
+      return;
+
+    }
+
+    renderTextBlocks(container, part.value);
+
+  });
+
+}
+
+
+function renderTextBlocks(container, text) {
 
   const lines =
     text.replace(/\r\n/g, "\n").split("\n");

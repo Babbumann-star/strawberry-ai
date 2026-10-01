@@ -184,7 +184,15 @@ function addMessage(text, type) {
 
   if (type === "ai") {
 
-    renderMarkdown(bubble, text);
+    /*
+      A reply that is nothing but LaTeX often arrives
+      without delimiters, so it is normalised first.
+    */
+
+    renderMarkdown(
+      bubble,
+      wrapBareLatex(text)
+    );
 
   } else {
 

@@ -865,3 +865,78 @@ textarea::placeholder {
     max-width: calc(100vw - 62px);
   }
 }
+
+/* ================= MATH ================= */
+
+  /*
+    KaTeX output is themed for a light page. These rules
+    keep it readable in both themes and let a wide
+    formula scroll on a phone instead of overflowing the
+    message bubble.
+  */
+
+  .bubble .katex {
+    font-size: 1.05em;
+    color: inherit;
+  }
+
+  .bubble .katex-inline-host {
+    white-space: normal;
+  }
+
+  .bubble .katex-display-host {
+    display: block;
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-width: 100%;
+    padding: 10px 0;
+    margin: 4px 0 12px;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  .bubble .katex-display-host > .katex-display {
+    margin: 0;
+  }
+
+  .bubble .katex-display-host .katex {
+    text-align: center;
+  }
+
+  /*
+    KaTeX marks errors in red. Invalid LaTeX is common in
+    model output, so the error colour is softened and the
+    raw source stays visible.
+  */
+
+  .bubble .katex-error {
+    color: #f87171;
+  }
+
+  body.light .bubble .katex-error {
+    color: #dc2626;
+  }
+
+  .bubble .katex-error::before,
+  .bubble .katex-error::after {
+    content: none;
+  }
+
+  /* Wide inline formulas scroll too, rather than spilling out. */
+
+  .bubble .katex-inline-host .katex {
+    max-width: 100%;
+  }
+
+  @media(max-width:750px) {
+
+    .bubble .katex {
+      font-size: 0.98em;
+    }
+
+    .bubble .katex-display-host {
+      padding: 8px 0;
+    }
+
+  }
+
