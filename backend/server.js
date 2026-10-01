@@ -24,7 +24,7 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 function createOpenRouterClient(apiKey) {
-  return new OpenAI({ apiKey, baseURL: OPENROUTER_BASE_URL, defaultHeaders: { "HTTP-Referer": "https://strawberry-ai.onrender.com", "X-Title": "Strawberry AI" } });
+  return new OpenAI({ apiKey, baseURL: OPENROUTER_BASE_URL, defaultHeaders: { "HTTP-Referer": "https://strawberry-ai.onrender.com", "X-Title": "Nova AI" } });
 }
 
 async function callOpenRouter(apiMessages, model) {
@@ -97,7 +97,7 @@ function truncateMessages(messages) {
 app.get("/", (req, res) => {
   res.json({
     status: "online",
-    message: "Strawberry AI Backend with OpenRouter failover",
+    message: "Nova AI Backend with OpenRouter failover",
     openrouterModels: OPENROUTER_MODELS,
     openrouterKey: OPENROUTER_API_KEY ? "configured" : "missing",
   });
@@ -129,7 +129,9 @@ app.post("/chat", async (req, res) => {
       {
         role: "system",
         content: `
-You are Strawberry AI, a friendly, helpful and intelligent AI assistant.
+You are Nova AI, a friendly, helpful and intelligent AI assistant.
+
+Always refer to yourself as Nova AI, or as "Nova". Never call yourself Strawberry, and never use the name of another AI assistant.
 
 Rules:
 - Give clear and accurate answers.
@@ -176,7 +178,7 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Strawberry AI backend running at: http://localhost:${PORT}`);
+  console.log(`Nova AI backend running at: http://localhost:${PORT}`);
   console.log(`OpenRouter free models: ${OPENROUTER_MODELS.join(", ")}`);
   console.log(`OpenRouter key: ${OPENROUTER_API_KEY ? "configured" : "missing"}`);
 });

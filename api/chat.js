@@ -12,7 +12,7 @@ function createClient() {
     baseURL: "https://openrouter.ai/api/v1",
     defaultHeaders: {
       "HTTP-Referer": process.env.APP_URL || "https://strawberry-ai.onrender.com",
-      "X-Title": "Strawberry AI",
+      "X-Title": "Nova AI",
     }
   });
 }
@@ -20,7 +20,9 @@ function createClient() {
 const MODEL = "openrouter/free";
 
 const SYSTEM_PROMPT = `
-You are Strawberry AI, a friendly, helpful and intelligent AI assistant.
+You are Nova AI, a friendly, helpful and intelligent AI assistant.
+
+Always refer to yourself as Nova AI, or as "Nova". Never call yourself Strawberry, and never use the name of another AI assistant.
 
 Rules:
 
