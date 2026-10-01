@@ -73,27 +73,44 @@
 
   function findMathEnd(text, from, closer) {
 
-    for (let i = from; i < text.length; i++) {
+  /*
+    A closer such as \( or \) begins with a backslash, so the
+    closer is tested before the escape skip. Testing the escape
+    first consumed the closer's own backslash, which made the
+    \( inline delimiter impossible to find.
+  */
 
-      if (text[i] === "\\") {
-        i++;
-        continue;
-      }
+  const isDollar = closer === "$";
 
-      if (
-        text.startsWith(closer, i) &&
-        (closer !== "$" || text[i + 1] !== "$")
-      ) {
+  for (let i = from; i < text.length; i++) {
+
+    if (text.startsWith(closer, i)) {
+
+      if (!isDollar || text[i + 1] !== "$") {
 
         return i;
 
       }
 
+      i++;
+
+      continue;
+
     }
 
-    return -1;
+    if (text[i] === "\\" && !isDollar) {
+
+      i++;
+
+      continue;
+
+    }
 
   }
+
+  return -1;
+
+}
 
   /*
     Display math is handled before the block parser runs so
