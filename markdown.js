@@ -119,53 +119,80 @@
 
   function splitDisplayMath(text) {
 
-    const parts = [];
+  const parts = [];
 
-    const pattern =
-      /\$\$([\s\S]+?)\$\$\s*|\\\[([\s\S]+?)\\\]\s*/g;
+  /*
+    A display formula is only hoisted out when it stands on
+    its own lines. A formula sitting on a table row is left
+    in the text: the pipes belong to the row, so removing
+    the formula first would leave that row malformed and
+    the cell count wrong. Those are handled later as
+    inline display math.
+  */
 
-    let last = 0;
+  const pattern =
+    /\$\$([\s\S]+?)\$\$[ \t]*(?=\n|$)|\\\[([\s\S]+?)\\\][ \t]*(?=\n|$)/g;
 
-    let match;
+  const lineHasTablePipes = (index) => {
 
-    while (
-      (match = pattern.exec(text)) !== null
-    ) {
+    const lineStart =
+      text.lastIndexOf("\n", index - 1) + 1;
 
-      if (match.index > last) {
+    const lineEnd = text.indexOf("\n", index);
 
-        parts.push({
-          type: "text",
-          value: text.slice(last, match.index)
-        });
+    return text
+      .slice(lineStart, lineEnd === -1 ? text.length : lineEnd)
+      .indexOf("|") !== -1;
 
-      }
+  };
 
-      parts.push({
-        type: "math",
-        value: (match[1] ?? match[2] ?? "").trim(),
-        display: true
-      });
+  let last = 0;
 
-      last = pattern.lastIndex;
+  let match;
+
+  while (
+    (match = pattern.exec(text)) !== null
+  ) {
+
+    if (lineHasTablePipes(match.index)) {
+
+      continue;
 
     }
 
-    if (last < text.length) {
+    if (match.index > last) {
 
       parts.push({
         type: "text",
-        value: text.slice(last)
+        value: text.slice(last, match.index)
       });
 
     }
 
-    return parts.length
-      ? parts
-      : [{ type: "text", value: text }];
+    parts.push({
+      type: "math",
+      value: (match[1] ?? match[2] ?? "").trim(),
+      display: true
+    });
+
+    last = pattern.lastIndex;
 
   }
 
+  if (last < text.length) {
+
+    parts.push({
+      type: "text",
+      value: text.slice(last)
+    });
+
+  }
+
+  return parts.length
+    ? parts
+    : [{ type: "text", value: text }];
+
+}
   /*
     Inline math. Currency amounts such as "$5" and "costs
     $10 and $20" are left alone: an inline run only counts
@@ -259,6 +286,31 @@
     if (ch === "\\" && text[index + 1] === "(") {
 
       const close = findMathEnd(text, index + 2, "\\)");
+
+      if (close !== -1) {
+
+        pushMath(text.slice(index + 2, close));
+
+        index = close + 2;
+
+        continue;
+
+      }
+
+    }
+
+    if (ch === "$" && text[index + 1] === "$") {
+
+      /*
+        A display formula that reached the inline pass
+        sits inside a single line block, most often a
+        table cell. It is rendered as display math but
+        the wrapping span stays inline so the row
+        height is not affected.
+      */
+
+      const close =
+        findMathEnd(text, index + 2, "$$");
 
       if (close !== -1) {
 
